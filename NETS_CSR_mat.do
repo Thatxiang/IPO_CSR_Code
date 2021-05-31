@@ -101,17 +101,28 @@ save $bt/crs_rem, replace
 *** match unmatched firms with public compustat firms
 
 use $bt/comp_50_16_uniqstem, clear
-gen name_st=stem_name
+gen name_st=trim(stem_name)
+
+replace name_st = subinstr(name_st, "U S", "US", .)
 gen gvk=real(gvkey)
 save $bt/comp_stem, replace
+
+ use $bt/crsp_comp_std, clear
+ gen upper_name = upper(conm)
+ duplicates drop standard_name, force
+ *drop standard_name stem_name
+ gen gvk=real(GVKEY)
+ drop GVKEY
+ save $bt/crsp_comp_stem, replace
 
 use $bt/crs_rem, clear 
 keep all_name_listed company name_st id
 duplicates drop name_st, force
+replace name_st = subinstr(name_st, "U S", "US", .)
 
-matchit id name_st using $bt/comp_stem.dta, idu(gvk) txtu(name_st) override di sim(token) weights(root)  threshold(0.9)
+matchit id name_st using $bt/crsp_comp_stem.dta, idu(gvk) txtu(name_st) override di sim(token) weights(root)  threshold(0.9)
 
-	joinby gvk using $bt/comp_stem.dta
+	joinby gvk using $bt/crsp_comp_stem.dta
         joinby id using $bt/crs_rem.dta
 
 save $bt/csr_compst, replace
@@ -119,6 +130,11 @@ save $bt/csr_compst, replace
 
 *** manually verify the match
 use $bt/csr_compst, clear
+
+	bysort id: egen maxsimi=max(similscore)
+keep if abs(maxsimi-similscore)<0.00001
+	drop maxsimi
+	
 drop score
 duplicates drop reprisk_id dunsnumber, force
 matchit all_name_listed conm , gen (score)
@@ -126,16 +142,20 @@ matchit all_name_listed conm , gen (score)
 order all_name_listed conm  score similscore
 sort score
 
-*** cutoff score of 0.7 obrained after manual observation
-keep if (score>0.7 & sim>0.97)
+save $bt/csr_compst_temp, replace
 
-keep all_name_listed conm score similscore id name_st gvk gvkey city company dunsnumber state reprisk_id original_name headquarter_country_code headquarter_country
+use $bt/csr_compst_temp, clear
+
+*** cutoff score of 0.7 obrained after manual observation
+keep if (score>0.65 & sim>0.97)  | (score>0.7)  | (sim>=0.995) |  (score>0.625 & sim>0.98)
+
+keep all_name_listed conm score similscore id name_st gvk company dunsnumber state reprisk_id standard_name stem_name name_merge original_name headquarter_country_code headquarter_country ipo_year
 
 save $bt/csr_comp_duns, replace
 
 ***** list of CSR firms linked to compustat using gvkey
 use $bt/csr_comp_duns, clear
-duplicates drop gvk reprisk_id, force
+duplicates drop gvk original_name, force
 save $bt/csr_gvk, replace
 
 

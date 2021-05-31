@@ -166,7 +166,9 @@ global NAMDIR ="$root/Build/Code/std_name"
 		use $bt/csr_gvk, clear
 	   
 		rename all_name_listed upper_name
+		duplicates drop upper_name, force
 		duplicates drop standard_name, force
+		duplicates drop stem_name, force
 		gen name_std = trim(standard_name)
 		drop name_st
 		gen name_st=trim(stem_name)
@@ -216,39 +218,7 @@ global NAMDIR ="$root/Build/Code/std_name"
 		 
 		save $bt/non_VC_cb_uniq, replace 
 		
-		
-		**** match unique non-VC firms with NETS data
-		
-			
-		use $bt/non_VC_firm, clear
-		
-			merge m:1 upper_name  using $bt/reprik_std
-		keep if _merge==3
-		drop _merge
-		
-		joinby standard_name using $bt/crs_nets_matched
-		
-		merge m:1 uniq_repr_id using $bt/non_VC_cb_uniq
-		keep if _merge==3
-		drop _merge
-		
-		*** drop public firms from the sample
 
-			merge m:1 name_std using $bt/csr_public_gvk
-			keep if _merge==1
-			drop _merge
-		
-		   merge m:1 upper_name using $bt/csr_public_gvk
-			keep if _merge==1
-			drop _merge
-		
-			merge m:1 dunsnumber using $bt/NETS_1990_2017_std
-			keep if _merge==1
-			
-			duplicates drop dunsnumber, force
-		
-		save $bt/cb_nets_csr_duns_list, replace
-			
 			
 			
 			**********************************
@@ -256,18 +226,18 @@ global NAMDIR ="$root/Build/Code/std_name"
 			*** prepare sample to run regressions
 
 			*** keep only first VC investment in firms
-			use $bo/matched_csr_nets_vc, clear
+			use $bt/matched_csr_nets_vc, clear
 			
-			keep original_name_csr sectors year avg_environmental_rri_year max_environmental_rri_year avg_environmental_rri max_environmental_rri avg_social_rri_year max_social_rri_year avg_social_rri max_social_rri avg_governance_rri_year max_governance_rri_year avg_governance_rri max_governance_rri avg_current_rri_year max_current_rri_year avg_current_rri max_current_rri max_reprisk_rating_year min_reprisk_rating_year max_reprisk_rating min_reprisk_rating InvestmentYear
+			keep original_name_csr sectors year avg_environmental_rri_year max_environmental_rri_year avg_environmental_rri max_environmental_rri avg_social_rri_year max_social_rri_year avg_social_rri max_social_rri avg_governance_rri_year max_governance_rri_year avg_governance_rri max_governance_rri avg_current_rri_year max_current_rri_year avg_current_rri max_current_rri max_reprisk_rating_year min_reprisk_rating_year max_reprisk_rating min_reprisk_rating InvestmentYear1
 			
-			drop if InvestmentYear==.
+			***drop if InvestmentYear==.
 			
-			keep original_name_csr year InvestmentYear
-			sort original_name_csr year InvestmentYear
+			keep original_name_csr year InvestmentYear1
+			sort original_name_csr year InvestmentYear1
 			
 			by original_name_csr: keep if _n==1
 			
-			rename 	InvestmentYear first_InvestmentYear
+			rename 	InvestmentYear1 first_InvestmentYear
 			
 			save $bt/csr_vc_first_investment, replace
 			
@@ -280,18 +250,39 @@ global NAMDIR ="$root/Build/Code/std_name"
 			
 			drop _merge
 			
+			gen exit_year = year(exit_date)
+			
 			*** remove publicly listed non-Vc firms
-			gen name_std=standard_name
+			gen name_st=trim(stem_name)
 			
 			merge m:1 upper_name using $bt/csr_public_gvk
-			keep if _merge==1
+			drop if _merge==2
+			drop if year>=ipo_year
 			drop _merge
+			
+						
+			keep original_name_csr sectors year avg_environmental_rri_year max_environmental_rri_year avg_environmental_rri max_environmental_rri avg_social_rri_year max_social_rri_year avg_social_rri max_social_rri avg_governance_rri_year    max_governance_rri_year avg_governance_rri max_governance_rri avg_current_rri_year max_current_rri_year avg_current_rri max_current_rri max_reprisk_rating_year min_reprisk_rating_year avg_reprisk_rating_year max_reprisk_rating min_reprisk_rating status exit_date exit_year uniq_repr_id standard_name
+			
+			**keep if exit_year-year>5
+			
+			sort original_name_csr year
+			
+			**** keep unique firm observations (earliest CSR rating for a firm)
+			by original_name_csr: keep if _n==1
+			
+			save $bt/non-VC-csr-uniq1, replace
+			
+			
+			use $bt/non-VC-csr-uniq1, clear
+			
+		    gen name_std=standard_name
 			
 			merge m:1 name_std using $bt/csr_public_gvk
-			keep if _merge==1
+			drop if _merge==2
+			drop if year>=ipo_year
 			drop _merge
 			
-			gen exit_year = year(exit_date)
+			**gen exit_year = year(exit_date)
 			
 			keep original_name_csr sectors year avg_environmental_rri_year max_environmental_rri_year avg_environmental_rri max_environmental_rri avg_social_rri_year max_social_rri_year avg_social_rri max_social_rri avg_governance_rri_year    max_governance_rri_year avg_governance_rri max_governance_rri avg_current_rri_year max_current_rri_year avg_current_rri max_current_rri max_reprisk_rating_year min_reprisk_rating_year avg_reprisk_rating_year max_reprisk_rating min_reprisk_rating status exit_date exit_year uniq_repr_id 
 			
@@ -302,13 +293,81 @@ global NAMDIR ="$root/Build/Code/std_name"
 			**** keep unique firm observations (earliest CSR rating for a firm)
 			by original_name_csr: keep if _n==1
 			
-			save $bt/non-VC-csr-uniq, replace
-				
+			drop if original_name_csr == "Adobe Systems Inc (Adobe)"
+			drop if original_name_csr == "Citigroup Inc (Citi; Citigroup)"
+			drop if original_name_csr == "Citigroup Investments Inc"
+			drop if original_name_csr == "Google Inc (Google)"
+			drop if original_name_csr == "Massachusetts Institute of Technology (MIT)"
+			drop if original_name_csr == "Merck & Co Inc (Merck)"
+			drop if original_name_csr == "New Jersey Institute of Technology"
+			drop if original_name_csr  == "Regeneron Pharmaceuticals Inc"
+			drop if original_name_csr  == "Starbucks Corp (Starbucks)"
+			drop if original_name_csr  == "World Bank Group (WBG); The"
 			
+			save $bt/non-VC-csr-uniq, replace
+			
+					
+		**** match unique non-VC firms with NETS data
+		
+		use $bt/non_VC_firm, clear
+		
+			merge m:1 upper_name  using $bt/reprik_std
+		keep if _merge==3
+		drop _merge
+		
+		joinby standard_name using $bt/crs_nets_matched
+		
+		merge m:1 uniq_repr_id using $bt/non-VC-csr-uniq
+		keep if _merge==3
+		drop _merge
+		
+		duplicates drop dunsnumber, force
+	
+		keep company dunsnumber
+		sort company dunsnumber
+		save $bt/cb_nets_csr_duns_list, replace
+				
+	   
+	   *** list of VC-backed firms that received first VC investment after the CSR ratings
+	   use $bt/matched_csr_nets_vc, clear
+			
+			keep original_name_csr sectors year avg_environmental_rri_year max_environmental_rri_year avg_environmental_rri max_environmental_rri avg_social_rri_year max_social_rri_year avg_social_rri max_social_rri avg_governance_rri_year max_governance_rri_year avg_governance_rri max_governance_rri avg_current_rri_year max_current_rri_year avg_current_rri max_current_rri max_reprisk_rating_year min_reprisk_rating_year avg_reprisk_rating_year max_reprisk_rating min_reprisk_rating InvestmentYear1 
+			
+			** track first investment year of VC backed firms
+			merge m:1 original_name_csr using $bt/csr_vc_first_investment
+			keep if _merge==3
+			drop _merge
+			
+			sort original_name_csr year
+			
+			**** keep the earliest csr rating for a firm
+			by original_name_csr: keep if _n==1
+			
+			***** keep cases where CSR rating was given before VC investment
+			keep if year<first_InvestmentYear
+			
+            keep original_name_csr
+			
+			*gen all_name_listed_UPCASE = upper( original_name_csr)
+			
+			save $bt/csr_vc_final_list, replace
+	   
+	   
+	     use $bt/vc_csr_list, clear
+		 
+		 merge 1:1 original_name_csr using $bt/csr_vc_final_list
+		 keep if _merge==3
+		 
+		 keep all_name_listed_UPCASE CompanyName_UPCASE CompanyName original_name_csr vc_name_std csr_name_std stem_name
+		 
+		 duplicates drop all_name_listed_UPCASE , force
+		 
+		 save $bt/csr_vc_final_reg_sample, replace
+	   
 			
 		*** create final regression sample
 		
-			use $bo/matched_csr_nets_vc, clear
+			use $bt/matched_csr_nets_vc, clear
 			
 				**** find the exit date (IPO or acquisition)
 		gen exit_date = D if D!=. & DE==.
@@ -320,7 +379,7 @@ global NAMDIR ="$root/Build/Code/std_name"
 		replace status ="M&A" if exit_date == DE & DE!=.
 		
 			
-			keep original_name_csr sectors year avg_environmental_rri_year max_environmental_rri_year avg_environmental_rri max_environmental_rri avg_social_rri_year max_social_rri_year avg_social_rri max_social_rri avg_governance_rri_year max_governance_rri_year avg_governance_rri max_governance_rri avg_current_rri_year max_current_rri_year avg_current_rri max_current_rri max_reprisk_rating_year min_reprisk_rating_year avg_reprisk_rating_year max_reprisk_rating min_reprisk_rating InvestmentYear exit_date status
+			keep original_name_csr sectors year avg_environmental_rri_year max_environmental_rri_year avg_environmental_rri max_environmental_rri avg_social_rri_year max_social_rri_year avg_social_rri max_social_rri avg_governance_rri_year max_governance_rri_year avg_governance_rri max_governance_rri avg_current_rri_year max_current_rri_year avg_current_rri max_current_rri max_reprisk_rating_year min_reprisk_rating_year avg_reprisk_rating_year max_reprisk_rating min_reprisk_rating InvestmentYear1 exit_date status
 			
 			gen exit_year = year(exit_date)
 			
@@ -403,9 +462,6 @@ global NAMDIR ="$root/Build/Code/std_name"
 		label var vc_backed "VC funding anytime in future"
 		label var InvestmentYear "VC Investment Year"
 
-		
-		**** summary stats
-		univar avg_reprisk_rating_year avg_current_rri_year avg_environmental_rri_year avg_social_rri_year avg_governance_rri_year vc_backed ipo ma exit
 		
 		
 		****** Regressions
@@ -515,6 +571,11 @@ global NAMDIR ="$root/Build/Code/std_name"
 			label var ipo  "IPO anytime in future"	
 			label var ma  "M&A anytime in future"	
 			label var exit  "Successful Exit anytime in future"
+			
+			
+		**** summary stats
+		univar avg_reprisk_rating_year avg_current_rri_year avg_environmental_rri_year avg_social_rri_year avg_governance_rri_year vc_backed ipo ma exit
+		
 		
 		reghdfe ipo avg_reprisk_rating_year, absorb (year ind) cluster(ind)
 		est store e1
