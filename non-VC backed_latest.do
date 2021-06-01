@@ -7,7 +7,7 @@ set more off
 set matsize 5000
 
 
-global root="D:\Harshit\Projects\IPO_CSR"
+global root="C:\Users\hrajaiya\Documents\GitHub\IPO_CSR_Code"
 
 
 global bi="$root/Build/Input"
