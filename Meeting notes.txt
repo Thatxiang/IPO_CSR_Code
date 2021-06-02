@@ -1,0 +1,7 @@
+06/02 2nd meeting
+To do list
+1. run all code to produce one version of the results by Harshit
+2. Xiang rerun all code to confirm the results to be the same
+3. Replicate Xiang's regressions (sales, employment...) by Harshit
+4. Work on CSR news data separately to construct news measures 
+5. Using change in rating measure to rerun Harshit's regressions by Xiang

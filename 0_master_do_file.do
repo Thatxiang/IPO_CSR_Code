@@ -22,3 +22,4 @@ global NAMDIR ="$root/Build/Code/std_name"
 *step 4: Merge NETS DATA with CSR_VC DATA
 	do $bc/4_CSR_VC_NETS_v1
 
+*regresions

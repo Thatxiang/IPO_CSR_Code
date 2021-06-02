@@ -106,8 +106,6 @@ cap log using $bt/2_CSR_VC_NETS,t replace
 			gen `v' = .
 			gen l1_`v' = .
 			gen f1_`v' = .
-			gen f2_`v' = .
-			gen f3_`v' = .
 		}	
 		forvalue i = 2007/2017{
 			replace num_establish = num_establish`i' if year == `i'
@@ -126,19 +124,6 @@ cap log using $bt/2_CSR_VC_NETS,t replace
 			replace f1_hqemp = hqemp`j' if year == `i'
 			replace f1_hqsales = hqsales`j' if year == `i'
 		}
-			forvalue i = 2007/2015{
-				local j = `i' + 2
-			replace f2_num_establish = num_establish`j' if year == `i'
-			replace f2_hqemp = hqemp`j' if year == `i'
-			replace f2_hqsales = hqsales`j' if year == `i'
-		}
-			forvalue i = 2007/2014{
-				local j = `i' + 3
-			replace f3_num_establish = num_establish`j' if year == `i'
-			replace f3_hqemp = hqemp`j' if year == `i'
-			replace f3_hqsales = hqsales`j' if year == `i'
-		}
-		
 		forvalue i = 1990/2017{
 			drop num_establish`i'  hqemp`i'  hqsales`i' 
 		}
