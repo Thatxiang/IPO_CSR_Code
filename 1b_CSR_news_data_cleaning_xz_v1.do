@@ -13,6 +13,7 @@ global NAMDIR ="$root/Build/Code/std_name"
 cap log close
 cap log using $bt/1_CSR_data_cleaning,t replace
 
+*testing
 *CSR news data
 use $bi/pm_news_200701_201708, clear
 	rename REPRISK_ID reprisk_id
